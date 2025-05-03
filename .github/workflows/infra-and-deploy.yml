@@ -2,8 +2,9 @@ name: Infra + App Deployment
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:   # <— add this
+
 
 jobs:
   terraform:
