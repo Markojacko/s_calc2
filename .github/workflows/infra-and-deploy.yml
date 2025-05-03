@@ -1,14 +1,27 @@
+# .github/workflows/infra-and-deploy.yml
 name: Infra + App Deployment
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # <— add this
+  workflow_dispatch:
+    inputs:
+      terraform_action:
+        description: 'Which Terraform action to run'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
 
+env:
+  TF_WORKING_DIR: infra
 
 jobs:
   terraform:
-    name: "🛠️ Terraform Apply"
+    name: "🛠️ Terraform ${{ github.event.inputs.terraform_action }}"
     runs-on: ubuntu-latest
 
     steps:
@@ -26,21 +39,29 @@ jobs:
           terraform_version: 1.5.0
 
       - name: Terraform Init
-        working-directory: infra
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init
 
       - name: Terraform Plan
-        working-directory: infra
+        if: ${{ github.event.inputs.terraform_action != 'destroy' }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
-        working-directory: infra
+        if: ${{ github.event.inputs.terraform_action == 'apply' }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.terraform_action == 'destroy' }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform destroy -auto-approve
 
   deploy:
     name: "🚀 Deploy App"
     needs: terraform
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.terraform_action == 'apply' }}
 
     steps:
       - name: Checkout code
