@@ -1,0 +1,15 @@
+resource "aws_vpc" "main" {
+  cidr_block = "{{ cidr }}"
+  tags = {
+    Name = "main-vpc"
+  }
+}
+
+resource "aws_subnet" "subnet_1" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "{{ cidr }}"
+  availability_zone = "{{ AWS_AZ }}"
+  tags = {
+    Name = "subnet-1"
+  }
+}

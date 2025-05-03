@@ -1,0 +1,11 @@
+resource "google_compute_network" "main" {
+  name                    = "example-vpc"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "subnet_1" {
+  name          = "subnet1"
+  ip_cidr_range = "{{ cidr }}"
+  region        = "{{ GCP_REGION }}"
+  network       = google_compute_network.main.name
+}

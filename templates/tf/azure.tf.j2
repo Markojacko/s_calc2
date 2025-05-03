@@ -1,0 +1,13 @@
+resource "azurerm_virtual_network" "main" {
+  name                = "example-vnet"
+  address_space       = ["{{ cidr }}"]
+  location            = "{{ AZURE_LOCATION }}"
+  resource_group_name = "example-resources"
+}
+
+resource "azurerm_subnet" "subnet_1" {
+  name                 = "subnet1"
+  resource_group_name  = "example-resources"
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["{{ cidr }}"]
+}
