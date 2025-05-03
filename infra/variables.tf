@@ -15,5 +15,6 @@ variable "app_service_plan_name" {
 
 variable "webapp_name" {
   type = string
+  default = "sCalc2-MJ7676"
   description = "Must be globally unique, e.g. s-calc2-demo"
 }
