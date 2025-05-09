@@ -2,13 +2,6 @@ provider "azurerm" {
   features {}
 }
 
-variable "subscription_id" {}
-variable "tenant_id" {}
-variable "resource_group_name" {}
-variable "location" {}
-variable "app_service_plan_name" {}
-variable "webapp_name" {}
-
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location

@@ -1,30 +1,19 @@
+// infra/variables.tf
 variable "subscription_id" {
-  type        = string
-  description = "Azure Subscription ID for the provider"
+  description = "Azure subscription ID"
 }
-
 variable "tenant_id" {
-  type        = string
-  description = "Azure Tenant ID for the provider"
+  description = "Azure tenant ID"
 }
-
 variable "resource_group_name" {
-  type    = string
-  default = "sCalc2-rg"
+  description = "Name of the resource group"
 }
-
 variable "location" {
-  type    = string
-  default = "westeurope"
+  description = "Region (e.g. westus2)"
 }
-
 variable "app_service_plan_name" {
-  type    = string
-  default = "sCalc2-plan"
+  description = "Name for the App Service Plan"
 }
-
 variable "webapp_name" {
-  type        = string
-  default = "sCalc2-Demo-MJ7676"
-  description = "Must be globally unique, e.g. s-calc2-demo"
+  description = "Name for the Web App"
 }
