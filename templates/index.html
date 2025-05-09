@@ -1,79 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Subnet Calculator + Terraform Generator</title>
-  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>Subnet Calculator</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <div class="container">
-    <h2>Subnet Calculator</h2>
-    <form method="POST">
+<body class="bg-gray-100 text-gray-900">
+  <div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">IPv4 Subnet Calculator</h1>
+
+    <form method="POST" class="bg-white p-6 rounded shadow-md">
       {{ form.hidden_tag() }}
-      <label>{{ form.ip_address.label }}</label>
-      {{ form.ip_address(size=32) }}
-      <label>{{ form.cidr_mask.label }}</label>
-      {{ form.cidr_mask() }}
-      <label>{{ form.split_mask.label }}</label>
-      {{ form.split_mask() }}
-      <label>{{ form.cloud_provider.label }}</label>
-      {{ form.cloud_provider() }}
-      {{ form.submit(class_='btn') }}
+      <div class="mb-4">
+        {{ form.ip.label(class="block font-medium") }}
+        {{ form.ip(class="mt-1 p-2 border rounded w-full") }}
+        {% for err in form.ip.errors %}
+          <p class="text-red-600 text-sm">{{ err }}</p>
+        {% endfor %}
+      </div>
+      <div class="mb-4">
+        {{ form.cidr.label(class="block font-medium") }}
+        {{ form.cidr(class="mt-1 p-2 border rounded w-full") }}
+        {% for err in form.cidr.errors %}
+          <p class="text-red-600 text-sm">{{ err }}</p>
+        {% endfor %}
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Calculate
+      </button>
     </form>
 
-    {% if form.errors %}
-      <div class="error">
-        <ul>
-        {% for field, errors in form.errors.items() %}
-          {% for error in errors %}
-            <li>{{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-        </ul>
+    {% if summary %}
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="font-semibold mb-2">Network Address</h2>
+        <p class="text-xl">{{ summary.network_addr }}</p>
       </div>
-    {% endif %}
-
-    {% if result %}
-    <div class="result">
-      {% for key, value in result.items() %}
-        {% if key == 'Cloud Compatibility Warnings' %}
-          <div><strong>{{ key }}:</strong>
-            <ul>{% for w in value %}<li>{{ w }}</li>{% endfor %}</ul>
-          </div>
-        {% elif key not in ['total_hosts','usable_hosts'] %}
-          <div><strong>{{ key }}:</strong> {{ value }}</div>
-        {% endif %}
-      {% endfor %}
-
-      <a href="{{ url_for('export', format='csv', ip=form.ip_address.data, cidr=form.cidr_mask.data) }}" class="btn-export">Download CSV</a>
-      <a href="{{ url_for('export', format='json', ip=form.ip_address.data, cidr=form.cidr_mask.data) }}" class="btn-export">Download JSON</a>
-      <a href="{{ url_for('download_tf', ip=form.ip_address.data, cidr=form.cidr_mask.data, provider=form.cloud_provider.data) }}" class="btn-export" style="background:#343a40;">Download .tf</a>
-      <button id="show-tf" onclick="document.getElementById('tf-block').style.display='block'" class="btn-export" style="background:#6f42c1;">Show Terraform</button>
-
-      <div id="tf-block" style="display:none;">
-        <label><strong>Terraform Config:</strong></label>
-        <textarea id="tf-template" rows="12">{{ tf_template }}</textarea>
-        <button id="copy-tf" class="btn-export" style="background:#17a2b8;">Copy TF</button>
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="font-semibold mb-2">Broadcast Address</h2>
+        <p class="text-xl">{{ summary.broadcast_addr }}</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="font-semibold mb-2">First Usable Host</h2>
+        <p class="text-xl">{{ summary.first_host }}</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="font-semibold mb-2">Last Usable Host</h2>
+        <p class="text-xl">{{ summary.last_host }}</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow col-span-full">
+        <h2 class="font-semibold mb-2">Total Usable Hosts</h2>
+        <p class="text-xl">{{ summary.total_hosts }}</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow col-span-full">
+        <h2 class="font-semibold mb-4">Subnet Visualization</h2>
+        <div class="relative h-44">
+          <canvas id="subnetChart"
+                  data-network-count="{{ summary.network_count }}"
+                  data-host-count="{{ summary.host_count }}"
+                  data-broadcast-count="{{ summary.broadcast_count }}"></canvas>
+        </div>
       </div>
     </div>
     {% endif %}
-
-    {% if subnets %}
-    <h3>Split Subnets</h3>
-    <table>
-      <tr><th>#</th><th>Subnet</th><th>First IP</th><th>Last IP</th><th>Broadcast</th></tr>
-      {% for sn in subnets %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ sn }}</td>
-        <td>{{ sn.network_address + 1 if sn.num_addresses>2 else sn.network_address }}</td>
-        <td>{{ sn.broadcast_address - 1 if sn.num_addresses>2 else sn.broadcast_address }}</td>
-        <td>{{ sn.broadcast_address if sn.version==4 else 'N/A' }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
   </div>
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% if summary %}
+  <script>
+    (function() {
+      const canvas = document.getElementById('subnetChart');
+      const networkCount = parseInt(canvas.dataset.networkCount) || 0;
+      const hostCount = parseInt(canvas.dataset.hostCount) || 0;
+      const broadcastCount = parseInt(canvas.dataset.broadcastCount) || 0;
+      const ctx = canvas.getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [''],
+          datasets: [
+            { label: 'Network', data: [networkCount], backgroundColor: 'rgba(75,192,192,0.6)' },
+            { label: 'Hosts', data: [hostCount], backgroundColor: 'rgba(54,162,235,0.6)' },
+            { label: 'Broadcast', data: [broadcastCount], backgroundColor: 'rgba(255,99,132,0.6)' }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          scales: {
+            x: { stacked: true, title: { display: true, text: 'Address Count' } },
+            y: { stacked: true, display: false }
+          },
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { enabled: true }
+          },
+          maintainAspectRatio: false
+        }
+      });
+    })();
+  </script>
+  {% endif %}
 </body>
 </html>
