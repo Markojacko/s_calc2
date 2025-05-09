@@ -8,8 +8,12 @@ terraform {
   required_version = ">= 1.0.0"
 }
 
-provider "azurerm" {
-  features {}
+variable "subscription_id" {
+  description = "Azure subscription ID"
+}
+
+variable "tenant_id" {
+  description = "Azure tenant ID"
 }
 
 variable "resource_group_name" {
@@ -26,6 +30,12 @@ variable "app_service_plan_name" {
 
 variable "webapp_name" {
   description = "Name of the Web App"
+}
+
+provider "azurerm" {
+  subscription_id = var.subscription_id
+  tenant_id       = var.tenant_id
+  features {}
 }
 
 # Resource Group
