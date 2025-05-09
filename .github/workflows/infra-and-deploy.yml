@@ -27,7 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0                # Ensure full history for modules
+          fetch-depth: 0
 
       - name: Azure Login
         uses: azure/login@v2
@@ -38,11 +38,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ${ { env.TF_WORKING_DIR } }/.terraform
-            ${ { env.TF_WORKING_DIR } }/.terraform.lock.hcl
+            ${{ env.TF_WORKING_DIR }}/.terraform
+            ${{ env.TF_WORKING_DIR }}/.terraform.lock.hcl
           key: ${{ runner.os }}-tf-${{ hashFiles('infra/**/*.tf') }}
-          restore-keys: |
-            ${{ runner.os }}-tf-
+          restore-keys: ${{ runner.os }}-tf-
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -51,20 +50,12 @@ jobs:
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: |
-          terraform init \
-            -input=false \            # no variable prompts
-            -no-color \               # cleaner logs
-            -reconfigure              # force backend init without asking
+        run: terraform init -input=false -no-color -reconfigure
 
       - name: Terraform Plan
         if: ${{ github.event.inputs.terraform_action != 'destroy' }}
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: |
-          terraform plan \
-            -input=false \            # no prompts
-            -no-color \               # cleaner output
-            -out=tfplan               # save plan
+        run: terraform plan -input=false -no-color -out=tfplan
 
       - name: Terraform Apply
         if: ${{ github.event.inputs.terraform_action == 'apply' }}
